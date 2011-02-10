@@ -49,3 +49,23 @@ how to prototype
 * build the "letter ship" which has a string of letters, at first randomly
   generated but later taking into account the target strings.
 
+THE STORY
+---------
+
+You are CAPTAIN S. PELLER, starfighter pilot extraordinaire. Your mission:
+defeat the KAHRHAK-TERRORS, evil space aliens bent on galactic domination.
+Their only weakness: a KAHRHAK will subsume any letter fired into it.
+Form an English word, and the KAHRHAK can be detonated, and thereby
+destroyed. Beware: adding letters will subdue KAHRHAKS, but they will
+gradually grow in strength, and eventually breach your defenses. Stay
+sharp, Captain, and spell quick!
+
+CONTROLS
+--------
+
+up/down:		select kahrhak
+z:					fire letter
+right or c:	discard letter (breaks multiplier)
+x:					detonate kahrhak (scores if word, breaks multiplier if not)
+esc:				menu
+
