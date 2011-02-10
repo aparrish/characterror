@@ -1,0 +1,51 @@
+prototype ideas
+---------------
+
+the basic idea
+==============
+
+so here's the idea. there are N target strings on the screen, and a list of
+letters to "shoot" at the target strings. the goal is to shoot the letters at
+the target strings in order to make words. the longer the word, the better.
+
+the "shooting letters" are picked from a dictionary based on how likely they
+are to complete words currently possible in the target string. one control
+shoots a letter to the end of a string; another control "banks" the string,
+either scoring the string if it's complete word, or causing the string to
+vanish if it's not.
+
+shooting a letter onto the end of a string that results in the string not
+being able to form *any* valid word will instantly cause the string to
+disappear.
+
+what makes it fun
+=================
+
+the fun is all going to come from the algorithm which selects the letters,
+which should make it an interesting choice whether to go for the obvious
+word completion or for the letter than will help make a longer word.
+
+things to try
+=============
+
+* should word length scale score linearly or geometrically?
+* should bonus points be awarded for using more rare letters?
+* how many target strings? my inclination is to start with few (maybe three),
+  then build up to seven or so as difficulty increases.
+
+visual style
+============
+
+the "letter ship" is on the right, shooting left onto the target strings.
+
+I'm thinking it looks like a shmup. a retro aesthetic is easiest, but meh?
+the mechanics are vaguely similar to your puzzle bobbles, so that's another
+direction.
+
+how to prototype
+================
+
+* start with four target strings and a basic way to add letters to them.
+* build the "letter ship" which has a string of letters, at first randomly
+  generated but later taking into account the target strings.
+
