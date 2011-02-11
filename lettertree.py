@@ -51,6 +51,15 @@ class LetterTree(object):
 		else:
 			return True
 
+	def is_terminal(self, word):
+		try:
+			alts = list(set(self.alts(word)))
+			if len(alts) == 1 and alts[0] == '$':
+				return True
+			return False
+		except KeyError:
+			return True
+
 	def alts(self, word, depth=1, d=None):
 		if d is None:
 			d = self.data
@@ -70,10 +79,11 @@ if __name__ == '__main__':
 		line = line.strip()
 		tree.feed(line + "$")
 
-	for word in ['a', 'foo', 'bar', 'baz', 'quux', 'pants', 'squirm', 'purplk', 'internationa']:
+	for word in ['a', 'foo', 'bar', 'baz', 'quux', 'pants', 'squirm', 'purplk', 'internationa', 'aardvarks']:
 		print word + " is a word? " + str(tree.is_word(word))
 		print word + " is a prefix? " + str(tree.is_prefix(word))
-	tree.dump()
+		print word + " is terminal? " + str(tree.is_terminal(word))
+#	tree.dump()
 
 	for word in ['pan', 'shirt', 'intense', 'ax']:
 		print word + ' suggestions: ' + ', '.join([str(x) for x in tree.alts(word)])

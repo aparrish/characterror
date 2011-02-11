@@ -7,6 +7,8 @@ from lettertree import LetterTree
 
 from tweener import Tweener
 
+from java import lang
+
 # janky but accurate!
 letterprob = ''.join([
 	'qjx',
@@ -42,15 +44,18 @@ class TargetString(object):
 		self.y = y
 		self.is_word = False
 		self.is_prefix = True # assuming our corpus contains every letter as initial
+		self.alpha = 255
+		self.textsize = 16
 	def subsume(self, letter):
 		self.content += letter
-#		self.is_word = self.tree.is_word(self.content)
-#		self.is_prefix = self.tree.is_prefix(self.content)
+		self.is_word = self.tree.is_word(self.content)
+		self.is_prefix = self.tree.is_prefix(self.content)
 	def draw(self):
-		if self.tree.is_word(self.content):
-			fill(0, 255, 0)
-		elif self.tree.is_prefix(self.content):
-			fill(255, 255, 0)
+		if self.is_word:
+			fill(0, 255, 0, self.alpha)
+		elif self.is_prefix:
+			fill(255, 255, 0, self.alpha)
+		textSize(self.textsize)
 		text(self.content, self.x, self.y)
 
 class LetterSprite(object):
@@ -60,6 +65,7 @@ class LetterSprite(object):
 		self.let = let
 	def draw(self):
 		fill(255)
+		print self.x, self.y
 		text(self.let, self.x, self.y)
 
 class Fighter(object):
@@ -123,21 +129,23 @@ class LetterQueue(object):
 		return self.q
 
 class PlayfieldState(GameState):
-	def __init__(self, tree, slots=4):
+	def __init__(self, tree, scorer, slots=4):
 		self.tree = tree
 		self.fighter = Fighter(slots, 0)
 		self.letterq = LetterQueue(5)
-		self.targets = list()
+		self.targets = [None] * slots
 		for i in range(slots):
 			self.add_target_at_slot(i)
 		self.populate_queue(5)
 		self.letter_sprites = list()
+		self.scorer = scorer
 
 	def add_target_at_slot(self, idx):
 		target = TargetString(random.choice(letterprob),
 			self.tree, x=-20, y=40+(idx*40))
-		T.addTween(target, x=60, tweenTime=200, tweenType=T.OUT_EXPO, tweenDelay=1000)
-		self.targets.append(target)
+		T.addTween(target, x=70, tweenTime=200, tweenType=T.OUT_EXPO,
+			tweenDelay=1000)
+		self.targets[idx] = target
 
 	def draw(self):
 
@@ -165,11 +173,22 @@ class PlayfieldState(GameState):
 			if keyCode == RIGHT: # discard letter
 				self.letterq.pop()
 				self.populate_queue()
-			if keyCode == LEFT:
-				self.cull_and_score()
-		if key == ord(' '):
+		if key == ord('z'):
 			self.fire()
+		elif key == ord('x'):
+			self.detonate()
 		print [(t.content, self.tree.is_word(t.content)) for t in self.targets]
+
+	def detonate(self):
+		t = self.targets[self.fighter.pos]
+		if self.tree.is_word(t.content):
+			self.score_target(t)
+			T.addTween(t, alpha=-255, textsize=16,
+				onCompleteFunction=lambda: self.remove_target(t))
+		else:
+			self.scorer.combobreak(t.x, t.y)
+			T.addTween(t, alpha=-255, textsize=16,
+				onCompleteFunction=lambda: self.remove_target(t))
 
 	def fire(self):
 		popped = self.letterq.pop()
@@ -185,42 +204,121 @@ class PlayfieldState(GameState):
 			onCompleteFunction=lambda: self.letter_arrived(sprite, destpos))
 		# add to list so we can draw it
 		self.letter_sprites.append(sprite)
+		self.scorer.score_letter(popped, destx, desty)
 
 	def letter_arrived(self, sprite, pos):
 		# called from fire(), removes sprite, adds to string, populates
 		# queue (also calculates score here)
 		self.letter_sprites.remove(sprite)
 		self.targets[pos].subsume(sprite.let)
+		self.cull_and_score_terminals()
 		self.populate_queue()
 
-	def cull_and_score(self):
-		t = self.targets[self.fighter.pos]
-		if self.tree.is_word(t.content):
-			self.score_word(t.content)
-		else:
-			print "%s is not a word, no points!" % t.content
-
 	def cull_and_score_terminals(self):
-		to_remove = list()
+		compl = lambda x: self.remove_target(x)
 		for t in self.targets:
-			alts = self.tree.alts(t.content) 
-			if len(alts) == 1 and alts[0] == '$':
-				to_remove.append(t)
-		for t in to_remove:
-			print "terminal word %s" % t.content
-			self.score_word(t.content)
-			self.targets.remove(t)
+			if self.tree.is_terminal(t.content):
+				if self.tree.is_word(t.content):
+					self.score_target(t)
+					T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
+						onCompleteFunction=compl(t))
+				else:
+					self.scorer.combobreak(t.x, t.y)
+					T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
+						onCompleteFunction=compl(t))
 
-	def score_word(self, word):
-		print "word %s: score %d" % (word, len(word))
+	def remove_target(self, t):
+		assert t in self.targets, "couldn't find target!"
+		print t, t.content
+		idx = self.targets.index(t)
+		print "found target to remove at index %d" % idx
+		self.add_target_at_slot(idx)
+
+	def remove_target_idx(self, idx):
+		self.add_target_at_slot(idx)
+
+	def score_target(self, target):
+		self.scorer.score_word(target.content, target.x, target.y)
 
 	def populate_queue(self, count=1):
 		words = [t.content for t in self.targets]
 		suggested = list()
 		for word in words:
-			suggested += [x for x in self.tree.alts(word)]
+			if self.tree.is_prefix(word):
+				suggested += [x for x in self.tree.alts(word)]
 		self.letterq.intersect(suggested)
 		self.letterq.fill_rand_from(suggested)
+
+class StringSprite(object):
+	def __init__(self, content, x, y, textsize=16, r=255, g=255, b=255, a=255):
+		self.content = content
+		self.x = x
+		self.y = y
+		self.r = r
+		self.g = g
+		self.b = b
+		self.a = a
+		self.textsize = textsize
+	def draw(self):
+		textSize(self.textsize)
+		fill(self.r, self.g, self.b, self.a)
+		print "a string sprite", self.content, self.x, self.y, self.a
+		text(self.content, self.x, self.y)
+
+class ScoreState(GameState):
+
+	def __init__(self):
+		self.score = 0
+		self.multiplier = 1.0
+		self.score_sprites = list()
+
+	def score_letter(self, let, x, y):
+		letscore = 10 * self.multiplier
+		sprite = StringSprite(str(letscore), x, y, textsize=8)
+		T.addTween(sprite, textsize=8, y=-32, a=-255, tweenTime=1000,
+			tweenType=T.OUT_EXPO,
+			onCompleteFunction=lambda: self.remove_sprite(sprite))
+		self.score_sprites.append(sprite)
+		self.score += letscore
+		self.multiplier += 0.1
+
+	def score_word(self, word, x, y):
+		wordscore = 0
+		for let in word:
+			if let in 'qjxz':
+				wordscore += 500
+			elif let in 'vwkf':
+				wordscore += 250
+			else:
+				wordscore += 100
+		wordscore = int(wordscore * self.multiplier)
+		sprite = StringSprite(str(wordscore), x, y, r=0, g=255, b=0)
+		T.addTween(sprite, textsize=16, y=(y-32), g=0, a=0, tweenTime=2000,
+			tweenType=T.OUT_EXPO,
+			onCompleteFunction=lambda: self.remove_sprite(sprite))
+		self.score_sprites.append(sprite)
+		self.score += wordscore
+		self.multiplier += 1
+
+	def combobreak(self, x, y):
+		self.multiplier = 1.0
+		sprite = StringSprite("NONWORD, CHAIN BROKEN D:", x, y,
+			r=255, g=0, b=0)
+		T.addTween(sprite, textsize=16, y=(y-32), a=0, tweenTime=2000,
+			tweenType=T.OUT_EXPO,
+			onCompleteFunction=lambda: self.remove_sprite(sprite))
+		self.score_sprites.append(sprite)
+
+	def remove_sprite(self, sprite):
+		self.score_sprites.remove(sprite)
+
+	def draw(self):
+		for spr in self.score_sprites:
+			spr.draw()
+		fill(255)
+		textSize(16)
+		text(str(self.score), 16, 16)
+		text(str(self.multiplier), width-100, 16)
 
 def loadtree(callback):
 	print "loading wordlist"
@@ -291,11 +389,14 @@ class TitleScreenState(GameState):
 	def faded_out(self):
 		# when fadeout completes, this is called
 		self.manager.mute(self)
-		sketch.add_state(PlayfieldState(self.tree))
+		scorer = ScoreState()
+		sketch.add_state(scorer)
+		sketch.add_state(PlayfieldState(self.tree, scorer))
 
 class Sketch(GameStateManager):
 	def setup(self):
 		print "in sketch setup for some reason?"
+		frameRate(30)
 		size(800, 600)
 		fill(0)
 		background(0)
