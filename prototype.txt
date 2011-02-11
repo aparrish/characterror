@@ -69,3 +69,24 @@ right or c:	discard letter (breaks multiplier)
 x:					detonate kahrhak (scores if word, breaks multiplier if not)
 esc:				menu
 
+SCORING
+-------
+
+when you detonate a valid word, or make a word that can't get any longer:
+	- 10 points per letter
+	- 50 points for q, j, x, z
+	- 25 points for v, w, k, f
+	- multiplier goes up by 0.1
+
+when detonating an invalid word: multiplier reset
+creating an invalid word: multiplier reset
+discarding a letter: multiplier cut in half (e.g., 6x -> 3x)
+when timer runs out on word: multiplier reset
+
+ANIMATIONS
+----------
+
+- single letters move into view from left
+
+
+

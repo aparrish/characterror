@@ -7,11 +7,51 @@ from lettertree import LetterTree
 
 from tweener import Tweener
 
+# janky but accurate!
+letterprob = ''.join([
+	'qjx',
+	'z' * 2,
+	'v' * 5,
+	'w' * 6,
+	'k' * 7,
+	'f' * 8,
+	'y' * 9,
+	'b' * 12,
+	'h' * 14,
+	'm' * 17,
+	'p' * 17,
+	'g' * 17,
+	'u' * 20,
+	'c' * 22,
+	'd' * 22,
+	'l' * 31,
+	't' * 36,
+	'n' * 37,
+	'o' * 37,
+	'r' * 42,
+	'a' * 47,
+	'i' * 48,
+	's' * 56,
+	'e' * 69])
+
 class TargetString(object):
-	def __init__(self, content):
+	def __init__(self, content, tree, x, y):
 		self.content = content
+		self.tree = tree
+		self.x = x
+		self.y = y
+		self.is_word = False
+		self.is_prefix = True # assuming our corpus contains every letter as initial
 	def subsume(self, letter):
 		self.content += letter
+#		self.is_word = self.tree.is_word(self.content)
+#		self.is_prefix = self.tree.is_prefix(self.content)
+	def draw(self):
+		if self.tree.is_word(self.content):
+			fill(0, 255, 0)
+		elif self.tree.is_prefix(self.content):
+			fill(255, 255, 0)
+		text(self.content, self.x, self.y)
 
 class LetterSprite(object):
 	def __init__(self, let, x, y):
@@ -59,7 +99,7 @@ class LetterQueue(object):
 		self.length = length
 	def fillrand(self):
 		for i in range(self.length):
-			self.q.append(random.choice('abcdefghijklmnopqrstuvwxyz'))
+			self.q.append(random.choice(letterprob))
 	def append(self, letter):
 		assert type(letter) is str, "letter is not string"
 		assert len(letter) == 1, "letter is not string of length 1"
@@ -89,21 +129,21 @@ class PlayfieldState(GameState):
 		self.letterq = LetterQueue(5)
 		self.targets = list()
 		for i in range(slots):
-			self.targets.append(TargetString(random.choice(string.ascii_lowercase)))
+			self.add_target_at_slot(i)
 		self.populate_queue(5)
 		self.letter_sprites = list()
+
+	def add_target_at_slot(self, idx):
+		target = TargetString(random.choice(letterprob),
+			self.tree, x=-20, y=40+(idx*40))
+		T.addTween(target, x=60, tweenTime=200, tweenType=T.OUT_EXPO, tweenDelay=1000)
+		self.targets.append(target)
 
 	def draw(self):
 
 		# draw letter slots
 		for i, ts in enumerate(self.targets):
-			if self.tree.is_word(ts.content):
-				fill(0, 255, 0)
-			elif self.tree.is_prefix(ts.content):
-				fill(255, 255, 0)
-			else:
-				fill(255)
-			text(ts.content, 50, 40+(i*40))
+			ts.draw()
 
 		# draw letter queue
 		fill(255)
