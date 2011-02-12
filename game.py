@@ -56,6 +56,7 @@ class TargetString(object):
 		elif self.is_prefix:
 			fill(255, 255, 0, self.alpha)
 		textSize(self.textsize)
+		textAlign(LEFT)
 		text(self.content, self.x, self.y)
 
 class LetterSprite(object):
@@ -66,12 +67,14 @@ class LetterSprite(object):
 	def draw(self):
 		fill(255)
 		print self.x, self.y
+		textAlign(LEFT)
 		text(self.let, self.x, self.y)
 
 class Fighter(object):
-	def __init__(self, maxp=0, initp=0):
+	def __init__(self, letterq, maxp=0, initp=0):
 		self.maxp = maxp
 		self.pos = initp
+		self.letterq = letterq
 		(self.x, self.y) = self.getxy_for_pos(initp)
 		self.frames = 0
 		self.animation = ('<@#', '<@%', '<@*')
@@ -83,14 +86,19 @@ class Fighter(object):
 		if self.pos < 0: self.pos = 0
 		(newx, newy) = self.getxy_for_pos(self.pos)
 		T.addTween(self, y=(newy-self.y), tweenTime=200, tweenType=T.OUT_EXPO)
+		T.addTween(self.letterq, y=(newy-self.y), tweenTime=250,
+			tweenType=T.OUT_EXPO)
 	def down(self):
 		self.pos += 1
 		if self.pos > self.maxp - 1: self.pos = self.maxp
 		(newx, newy) = self.getxy_for_pos(self.pos)
 		T.addTween(self, y=(newy-self.y), tweenTime=200, tweenType=T.OUT_EXPO)
+		T.addTween(self.letterq, y=(newy-self.y), tweenTime=250,
+			tweenType=T.OUT_EXPO)
 	def draw(self):
 		# draw fighter
 		fill(255)
+		textAlign(LEFT)
 		text(self.animation[self.curframe], self.x, self.y)
 		self.frames += 1
 		if self.frames % 5 == 0:
@@ -99,10 +107,12 @@ class Fighter(object):
 				self.curframe = 0
 
 class LetterQueue(object):
-	def __init__(self, length):
+	def __init__(self, length, x, y):
 		assert type(length) is int, "length is not an integer"
 		self.q = list()
 		self.length = length
+		self.x = x
+		self.y = y
 	def fillrand(self):
 		for i in range(self.length):
 			self.q.append(random.choice(letterprob))
@@ -127,16 +137,19 @@ class LetterQueue(object):
 		return self.q.pop(0)
 	def letters(self):
 		return self.q
+	def draw(self):
+		textAlign(LEFT)
+		text(" ".join(self.letters()), self.x, self.y)
 
 class PlayfieldState(GameState):
-	def __init__(self, tree, scorer, slots=4):
+	def __init__(self, tree, scorer, slots=5):
 		self.tree = tree
-		self.fighter = Fighter(slots, 0)
-		self.letterq = LetterQueue(5)
+		self.letterq = LetterQueue(5, 364, 40)
+		self.fighter = Fighter(self.letterq, slots-1, 0)
 		self.targets = [None] * slots
 		for i in range(slots):
 			self.add_target_at_slot(i)
-		self.populate_queue(5)
+		self.populate_queue()
 		self.letter_sprites = list()
 		self.scorer = scorer
 
@@ -149,14 +162,14 @@ class PlayfieldState(GameState):
 
 	def draw(self):
 
+		textAlign(LEFT)
 		# draw letter slots
 		for i, ts in enumerate(self.targets):
 			ts.draw()
 
 		# draw letter queue
 		fill(255)
-		for i, let in enumerate(self.letterq.letters()):
-			text(let, 325, 200 + (i*32))
+		self.letterq.draw()
 
 		# draw sprites
 		for sp in self.letter_sprites:
@@ -240,13 +253,17 @@ class PlayfieldState(GameState):
 	def score_target(self, target):
 		self.scorer.score_word(target.content, target.x, target.y)
 
-	def populate_queue(self, count=1):
+	def populate_queue(self):
 		words = [t.content for t in self.targets]
 		suggested = list()
+		all_possible = list()
 		for word in words:
 			if self.tree.is_prefix(word):
-				suggested += [x for x in self.tree.alts(word)]
-		self.letterq.intersect(suggested)
+				word_possible = [x for x in self.tree.alts(word)]
+				suggested += random.sample(word_possible,
+					min(len(word), len(word_possible)))
+				all_possible += word_possible
+		self.letterq.intersect(all_possible)
 		self.letterq.fill_rand_from(suggested)
 
 class StringSprite(object):
@@ -262,7 +279,7 @@ class StringSprite(object):
 	def draw(self):
 		textSize(self.textsize)
 		fill(self.r, self.g, self.b, self.a)
-		print "a string sprite", self.content, self.x, self.y, self.a
+		textAlign(CENTER)
 		text(self.content, self.x, self.y)
 
 class ScoreState(GameState):
@@ -273,7 +290,7 @@ class ScoreState(GameState):
 		self.score_sprites = list()
 
 	def score_letter(self, let, x, y):
-		letscore = 10 * self.multiplier
+		letscore = 100 * self.multiplier
 		sprite = StringSprite(str(letscore), x, y, textsize=8)
 		T.addTween(sprite, textsize=8, y=-32, a=-255, tweenTime=1000,
 			tweenType=T.OUT_EXPO,
@@ -286,14 +303,14 @@ class ScoreState(GameState):
 		wordscore = 0
 		for let in word:
 			if let in 'qjxz':
-				wordscore += 500
+				wordscore += 5000
 			elif let in 'vwkf':
-				wordscore += 250
+				wordscore += 2500
 			else:
-				wordscore += 100
+				wordscore += 1000
 		wordscore = int(wordscore * self.multiplier)
-		sprite = StringSprite(str(wordscore), x, y, r=0, g=255, b=0)
-		T.addTween(sprite, textsize=16, y=(y-32), g=0, a=0, tweenTime=2000,
+		sprite = StringSprite(str(wordscore), textsize=8, x=x, y=y, r=0, g=255, b=0)
+		T.addTween(sprite, textsize=8, y=(y-32), g=0, a=0, tweenTime=1000,
 			tweenType=T.OUT_EXPO,
 			onCompleteFunction=lambda: self.remove_sprite(sprite))
 		self.score_sprites.append(sprite)
@@ -302,9 +319,9 @@ class ScoreState(GameState):
 
 	def combobreak(self, x, y):
 		self.multiplier = 1.0
-		sprite = StringSprite("NONWORD, CHAIN BROKEN D:", x, y,
+		sprite = StringSprite("BREAK", x, y, textsize=8,
 			r=255, g=0, b=0)
-		T.addTween(sprite, textsize=16, y=(y-32), a=0, tweenTime=2000,
+		T.addTween(sprite, textsize=8, y=(y-32), a=0, tweenTime=1000,
 			tweenType=T.OUT_EXPO,
 			onCompleteFunction=lambda: self.remove_sprite(sprite))
 		self.score_sprites.append(sprite)
@@ -317,6 +334,7 @@ class ScoreState(GameState):
 			spr.draw()
 		fill(255)
 		textSize(16)
+		textAlign(LEFT)
 		text(str(self.score), 16, 16)
 		text(str(self.multiplier), width-100, 16)
 
@@ -406,7 +424,7 @@ class Sketch(GameStateManager):
 		self.s = millis()
 	def draw(self):
 		background(0)
-		tm = millis()
+		tm = float(millis())
 		delta = tm - self.s
 		self.s = tm
 		T.update(delta)
