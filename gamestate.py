@@ -10,6 +10,9 @@ class GameStateManager(object):
 		print "adding state " + str(state)
 		self.states.append(state)
 		state.manager = self
+	def remove_state(self, state):
+		assert state in self.states, "can't remove state that hasn't been added"
+		self.states.remove(state)
 	def draw(self):
 		for state in self.states:
 			if state not in self.muted_states and hasattr(state, 'draw'):
@@ -27,6 +30,11 @@ class GameStateManager(object):
 	def unmute(self, state):
 		if state in self.muted_states:
 			self.muted_states.remove(state)
+	def remove_instances(self, classes):
+		self.states = [state for state in self.states \
+			if type(state) not in classes]
+	def get_instances(self, classes):
+		return [state for state in self.states if type(state) in classes]
 
 class WatcherState(GameState):
 	def mouseClicked(self):

@@ -174,6 +174,7 @@ class PlayfieldState(GameState):
 		self.populate_queue()
 		self.letter_sprites = list()
 		self.scorer = scorer
+		self.paused = False
 
 	def add_target_at_slot(self, idx):
 		target = TargetString(random.choice(letterprob),
@@ -200,6 +201,7 @@ class PlayfieldState(GameState):
 		self.letterq.draw()
 
 	def keyPressed(self):
+		if self.paused: return
 		if key == CODED:
 			if keyCode == UP:
 				self.fighter.up()
@@ -300,6 +302,42 @@ class PlayfieldState(GameState):
 		self.letterq.intersect(all_possible)
 		self.letterq.fill_rand_from(suggested)
 
+	def timer_done(self):
+		self.paused = True
+		for sp in self.letter_sprites:
+			T.removeTweeningFrom(sp)
+		self.manager.add_state(DisplayScoreState(self.scorer.score))
+
+class DisplayScoreState(GameState):
+	def __init__(self, score):
+		self.score = score
+	def draw(self):
+		fill(0, 128)
+		rect(0, 0, width, height)
+		templ = \
+"""
++---------------------------+
+|        FINAL SCORE        |
+|                           |
+|                           |
+|                           |
+|       <Esc> for menu      |
++---------------------------+"""
+		textAlign(CENTER, CENTER)
+		textSize(16)
+		fill(255)
+		text(templ, width/2, height/2)
+		textSize(32)
+		text(str(self.score), width/2, height/2 + 8)
+	def keyPressed(self):
+		print key
+		if key == 27:
+			self.manager.remove_instances([PlayfieldState, ScoreState, TimerState])
+			titles = self.manager.get_instances([TitleScreenState])
+			assert len(titles) == 1, "wrong number of title screen states"
+			titles[0].fade_in()
+			self.manager.remove_state(self)
+
 class StringSprite(object):
 	def __init__(self, content, x, y, textsize=16, r=255, g=255, b=255, a=255):
 		self.content = content
@@ -363,13 +401,25 @@ class ScoreState(GameState):
 		text(str(self.score), 16, 16)
 		text(str(self.multiplier), width-100, 16)
 
-def loadtree(callback):
-	print "loading wordlist"
-	tree = LetterTree()
-	for line in open('wordlist_short'):
-		line = line.strip()
-		tree.feed(line + "$")
-	callback(tree)
+class TimerState(GameState):
+	def __init__(self, seconds, callback):
+		self.seconds = seconds
+		self.callback = callback
+		self.called_callback = False
+	def start(self):
+		self.started = millis()
+	def draw(self):
+		delta = millis() - self.started
+		delta_seconds = int(delta / 1000)
+		textSize(32)
+		textAlign(CENTER)
+		fill(255)
+		if delta_seconds >= self.seconds and self.called_callback is False:
+			self.called_callback = True
+			self.callback()
+			text("EXPIRED", width/2, height - 100)
+		else:
+			text(str(delta_seconds), width/2, height - 100)
 
 class StarFieldState(GameState):
 	def __init__(self, layer_count=3, star_count=100):
@@ -384,8 +434,16 @@ class StarFieldState(GameState):
 		for i, layer in enumerate(self.layers):
 			for x, y in layer:
 				fill((i + 1) * (255.0 / self.layer_count))
-				xoff = (millis() / 50.0) * (i + 1)
+				xoff = (millis() / 25.0) * (i + 1)
 				text(".", (x - xoff) % width, y)
+
+def loadtree(callback):
+	print "loading wordlist"
+	tree = LetterTree()
+	for line in open('wordlist_short'):
+		line = line.strip()
+		tree.feed(line + "$")
+	callback(tree)
 
 class TitleScreenState(GameState):
 	def __init__(self):
@@ -449,8 +507,20 @@ class TitleScreenState(GameState):
 		# when fadeout completes, this is called
 		self.manager.mute(self)
 		scorer = ScoreState()
+		playfield = PlayfieldState(self.tree, scorer)
+		timer = TimerState(20, lambda: playfield.timer_done())
 		sketch.add_state(scorer)
-		sketch.add_state(PlayfieldState(self.tree, scorer))
+		sketch.add_state(timer)
+		sketch.add_state(playfield)
+		timer.start()
+
+	def fade_in(self):
+		self.manager.unmute(self)
+		T.addTween(self, alpha=255, tweenTime=1000, tweenType=T.OUT_EXPO,
+			onCompleteFunction=self.faded_in)
+
+	def faded_in(self):
+		self.fading = False
 
 class Sketch(GameStateManager):
 	def setup(self):
@@ -482,5 +552,7 @@ def draw():
 def mouseClicked():
 	sketch.mouseClicked()
 def keyPressed():
+	if key == 27:
+		this.key = '\0'
 	sketch.keyPressed()
 
