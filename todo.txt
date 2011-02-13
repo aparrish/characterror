@@ -1,24 +1,29 @@
 
-- story/tutorial/instructions screen
-- simple menu:
+x simple menu:
 	- Instructions
 	- Timed Game: 2 minutes
 	- Timed Game: 5 minutes
 	- 100 Letter Challenge
 	- Credits
 
+- implement instructions screen
+- implement credits screen
 - implement 100 letter challenge (player gets 100 letters, no timer)
 
 - finalize mechanics for discarding/rearranging letters
 	- implement finalized mechanics
 
-- sound effects!
+x sound effects!
 
 - figure out how to build/package this stuff. HASSLE
+	- could just be launch4j for windows, stupid app wrapper for mac?
+
+- esc key brings up help, way to quit to title in playfield state
 
 OPTIONALS BUT NICE
 
 - keep track of longest word, highest scoring word, highest
 	multiplier, etc.
+- high scores, at least for current session
 - copy link to "tweet this score" to clipboard?
 

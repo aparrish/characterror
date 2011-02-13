@@ -478,6 +478,13 @@ class TitleScreenState(GameState):
 		self.thread = None
 		self.init_loading_threads()
 		self.fading = False
+		self.menu = [
+			('instructions', 'How to play', 'Story and tutorial'),
+			('90sec','Timed game: 90 seconds','Get the highest score in ninety seconds!'),
+			('4min','Timed game: 4 minutes','You have four minutes. How high can you score?'),
+			('challenge','100 letter challenge', "The timer's off. How many points can you score with just 100 letters?"),
+			('credits', 'Credits', "Who made this game?")]
+		self.selected = 0
 
 	def init_loading_threads(self):
 		# just running one thread to load resources for now
@@ -491,6 +498,7 @@ class TitleScreenState(GameState):
 	def draw(self):
 		# draw banner
 		textSize(64)
+		textAlign(LEFT)
 		xcenter = width / 2.0
 		ypos = height / 3.0
 		xstart = xcenter - (textWidth(self.title) / 2.0)
@@ -504,7 +512,7 @@ class TitleScreenState(GameState):
 			translate(64, 0)
 		popMatrix()
 
-		# loading or "Z to start"
+		# loading or menu
 		textAlign(CENTER)
 		fill(255, 255, 0, self.alpha)
 		textSize(16)
@@ -513,30 +521,60 @@ class TitleScreenState(GameState):
 			ch = '|/-\\'
 			text("LOADING " + ch[num], xcenter, 2 * height / 3.0)
 		else:
-			text("PRESS <Z> TO START", xcenter, 2 * (height / 3.0))
-		textAlign(LEFT)
+			for i, (short, content, desc) in enumerate(self.menu):
+				if self.selected == i:
+					textSize(8)
+					fill(255, self.alpha)
+					text(desc, xcenter, height - 96)
+				else:
+					fill(192, self.alpha)
+				textSize(16)
+				text(content, xcenter, (2*(width/5)) + (i*24))
+			textSize(8)
+			fill(255, 255, 0, self.alpha)
+			text("Choose option with UP and DOWN. Press <Z> to select.", xcenter, (height - 48))
 
 	def keyPressed(self):
 		if self.thread.isAlive():
 			return
 		if self.fading:
 			return
-		if key == ord('z'):
+		if key == CODED:
+			if keyCode == UP:
+				self.selected -= 1
+			elif keyCode == DOWN:
+				self.selected += 1
+			self.selected = self.selected % len(self.menu)
+		elif key == ord('z'):
 			self.fading = True
+			selected_option = self.menu[self.selected][0]
 			T.addTween(self, alpha=-255, tweenTime=1000, tweenType=T.OUT_EXPO,
-				onCompleteFunction=self.faded_out)
+				onCompleteFunction=lambda: self.faded_out(selected_option))
 
-	def faded_out(self):
+	def faded_out(self, opt):
 		# when fadeout completes, this is called
 		self.manager.mute(self)
-		scorer = ScoreState()
-		playfield = PlayfieldState(self.tree, scorer)
-		timer = TimerState(20, lambda: playfield.timer_done())
-		sketch.add_state(scorer)
-		sketch.add_state(timer)
-		sketch.add_state(playfield)
-		timer.start()
-		sounds['etude1'].play(0)
+		if opt in ('90sec', '4min', 'challenge'):
+			if opt == '90sec':
+				remaining_time = 90
+			elif opt == '4min':
+				remaining_time = 240
+			scorer = ScoreState()
+			sketch.add_state(scorer)
+			playfield = PlayfieldState(self.tree, scorer)
+			if opt == 'challenge':
+				pass
+				# add challenge state here
+			else:
+				timer = TimerState(remaining_time, lambda: playfield.timer_done())
+				sketch.add_state(timer)
+				timer.start()
+			sketch.add_state(playfield)
+			sounds['etude1'].play(0)
+		elif opt == 'instructions':
+			sketch.add_state(InstructionsState(self))
+		elif opt == 'credits':
+			sketch.add_state(CreditsState(self))
 
 	def fade_in(self):
 		self.manager.unmute(self)
@@ -545,6 +583,33 @@ class TitleScreenState(GameState):
 
 	def faded_in(self):
 		self.fading = False
+
+class InstructionsState(GameState):
+	def __init__(self, title_screen):
+		self.title_screen = title_screen
+		self.page = 0
+	def draw(self):
+		textAlign(CENTER)
+		textSize(16)
+		text("stuff here " + str(self.page))
+	def keyPressed(self):
+		if key == ord('z'):
+			self.page += 1
+		if self.page == 4:
+			self.title_screen.fade_in()
+			self.manager.remove_state(self)
+
+class CreditsState(GameState):
+	def __init__(self, title_screen):
+		self.title_screen = title_screen
+	def draw(self):
+		textAlign(CENTER)
+		textSize(16)
+		text("credits stuff here")
+	def keyPressed(self):
+		if key == ord('z'):
+			self.title_screen.fade_in()
+			self.manager.remove_state(self)
 
 class Sketch(GameStateManager):
 	def setup(self):
