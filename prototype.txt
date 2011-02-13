@@ -88,5 +88,9 @@ ANIMATIONS
 
 - single letters move into view from left
 
+IDEAS
+-----
 
+one-minute, two-minute and five-minute game
+puzzle mode: make a ten-letter word? 
 

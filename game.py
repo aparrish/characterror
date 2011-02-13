@@ -36,6 +36,13 @@ letterprob = ''.join([
 	's' * 56,
 	'e' * 69])
 
+play_offset_x = 100
+fighter_offset_x = 250
+play_offset_y = 100
+
+def overdraw(things, count):
+	return [random.choice(things) for i in range(count)]
+
 class TargetString(object):
 	def __init__(self, content, tree, x, y):
 		self.content = content
@@ -46,6 +53,8 @@ class TargetString(object):
 		self.is_prefix = True # assuming our corpus contains every letter as initial
 		self.alpha = 255
 		self.textsize = 16
+		self.active = True
+		self.unique = random.randrange(100)
 	def subsume(self, letter):
 		self.content += letter
 		self.is_word = self.tree.is_word(self.content)
@@ -54,10 +63,18 @@ class TargetString(object):
 		if self.is_word:
 			fill(0, 255, 0, self.alpha)
 		elif self.is_prefix:
-			fill(255, 255, 0, self.alpha)
+			fill(255, 255, 255, self.alpha)
 		textSize(self.textsize)
 		textAlign(LEFT)
-		text(self.content, self.x, self.y)
+		for i, ch in enumerate(self.content):
+			if len(self.content) == 1 and i == 0:
+				fill(255, 0, 0, self.alpha)
+				xoff = sin(i + self.unique + millis() / 50.0) * 1.25
+				yoff = cos(i + self.unique + millis() / 54.0) * 1.25
+			else:
+				xoff = sin(i + self.unique + millis() / 200.0) * 1.25
+				yoff = cos(i + self.unique + millis() / 205.0) * 1.25
+			text(ch, self.x + (i*16) + xoff, self.y + yoff)
 
 class LetterSprite(object):
 	def __init__(self, let, x, y):
@@ -66,7 +83,6 @@ class LetterSprite(object):
 		self.let = let
 	def draw(self):
 		fill(255)
-		print self.x, self.y
 		textAlign(LEFT)
 		text(self.let, self.x, self.y)
 
@@ -76,11 +92,11 @@ class Fighter(object):
 		self.pos = initp
 		self.letterq = letterq
 		(self.x, self.y) = self.getxy_for_pos(initp)
-		self.frames = 0
-		self.animation = ('<@#', '<@%', '<@*')
+		self.animation = ('<[@(#', '<[@(%', '<[@(*')
+		self.colors = ((0,255,255),(0,192,192),(0,192,192),(0,255,255),(255,0,0))
 		self.curframe = 0
 	def getxy_for_pos(self, pos):
-		return (300, 40+(pos*40))
+		return (fighter_offset_x + play_offset_x, play_offset_y+(pos*40))
 	def up(self):
 		self.pos -= 1
 		if self.pos < 0: self.pos = 0
@@ -97,11 +113,13 @@ class Fighter(object):
 			tweenType=T.OUT_EXPO)
 	def draw(self):
 		# draw fighter
-		fill(255)
 		textAlign(LEFT)
-		text(self.animation[self.curframe], self.x, self.y)
-		self.frames += 1
-		if self.frames % 5 == 0:
+		textSize(16)
+		for i, (ch, col) in enumerate(zip(self.animation[self.curframe],
+				self.colors)):
+			fill(col[0],col[1],col[2])
+			text(ch, self.x + (i*16), self.y)
+		if frameCount % 5 == 0:
 			self.curframe += 1
 			if self.curframe >= len(self.animation):
 				self.curframe = 0
@@ -139,12 +157,17 @@ class LetterQueue(object):
 		return self.q
 	def draw(self):
 		textAlign(LEFT)
-		text(" ".join(self.letters()), self.x, self.y)
+		for i, ch in enumerate(self.letters()):
+			fill(255 - i * 10)
+			textSize(16 - i)
+			yoff = sin(i + millis() / 300.0) * 1.8
+			text(ch, self.x + (i*20), self.y + yoff)
 
 class PlayfieldState(GameState):
 	def __init__(self, tree, scorer, slots=5):
 		self.tree = tree
-		self.letterq = LetterQueue(5, 364, 40)
+		self.letterq = LetterQueue(5, play_offset_x + fighter_offset_x + 96,
+			play_offset_y)
 		self.fighter = Fighter(self.letterq, slots-1, 0)
 		self.targets = [None] * slots
 		for i in range(slots):
@@ -155,9 +178,9 @@ class PlayfieldState(GameState):
 
 	def add_target_at_slot(self, idx):
 		target = TargetString(random.choice(letterprob),
-			self.tree, x=-20, y=40+(idx*40))
-		T.addTween(target, x=70, tweenTime=200, tweenType=T.OUT_EXPO,
-			tweenDelay=1000)
+			self.tree, x=-20, y=play_offset_y+(idx*40))
+		T.addTween(target, x=(play_offset_x+20), tweenTime=200,
+			tweenType=T.OUT_EXPO, tweenDelay=1000)
 		self.targets[idx] = target
 
 	def draw(self):
@@ -167,33 +190,35 @@ class PlayfieldState(GameState):
 		for i, ts in enumerate(self.targets):
 			ts.draw()
 
-		# draw letter queue
-		fill(255)
-		self.letterq.draw()
-
 		# draw sprites
 		for sp in self.letter_sprites:
 			sp.draw()
 
 		self.fighter.draw()
 
+		# draw letter queue
+		fill(255)
+		self.letterq.draw()
+
 	def keyPressed(self):
 		if key == CODED:
 			if keyCode == UP:
 				self.fighter.up()
-			if keyCode == DOWN:
+			elif keyCode == DOWN:
 				self.fighter.down()
-			if keyCode == RIGHT: # discard letter
+			elif keyCode == RIGHT: # discard letter
 				self.letterq.pop()
 				self.populate_queue()
+		if key == ord('\n'):
+			self.detonate()
 		if key == ord('z'):
 			self.fire()
-		elif key == ord('x'):
-			self.detonate()
-		print [(t.content, self.tree.is_word(t.content)) for t in self.targets]
 
 	def detonate(self):
 		t = self.targets[self.fighter.pos]
+		if not(t.active):
+			return
+		t.active = False
 		if self.tree.is_word(t.content):
 			self.score_target(t)
 			T.addTween(t, alpha=-255, textsize=16,
@@ -204,11 +229,16 @@ class PlayfieldState(GameState):
 				onCompleteFunction=lambda: self.remove_target(t))
 
 	def fire(self):
+		# only fire if target able to accept
+		t = self.targets[self.fighter.pos]
+		if not(t.active):
+			return
+		t.active = False
 		popped = self.letterq.pop()
 		# create sprite
 		sprite = LetterSprite(popped, self.fighter.x, self.fighter.y)
-		destx = 50 + (len(self.targets[self.fighter.pos].content) * 16)
-		desty = 40 + (self.fighter.pos * 40)
+		destx = play_offset_x + (len(self.targets[self.fighter.pos].content) * 16)
+		desty = play_offset_y + (self.fighter.pos * 40)
 		# tween sprite to new position, will call letter_arrived when
 		# completed
 		destpos = self.fighter.pos
@@ -223,7 +253,9 @@ class PlayfieldState(GameState):
 		# called from fire(), removes sprite, adds to string, populates
 		# queue (also calculates score here)
 		self.letter_sprites.remove(sprite)
+		# add letter to target string, reactivate
 		self.targets[pos].subsume(sprite.let)
+		self.targets[pos].active = True
 		self.cull_and_score_terminals()
 		self.populate_queue()
 
@@ -231,6 +263,7 @@ class PlayfieldState(GameState):
 		compl = lambda x: self.remove_target(x)
 		for t in self.targets:
 			if self.tree.is_terminal(t.content):
+				t.active = False
 				if self.tree.is_word(t.content):
 					self.score_target(t)
 					T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
@@ -260,8 +293,8 @@ class PlayfieldState(GameState):
 		for word in words:
 			if self.tree.is_prefix(word):
 				word_possible = [x for x in self.tree.alts(word)]
-				suggested += random.sample(word_possible,
-					min(len(word), len(word_possible)))
+				# fill queue with more letters to finish longer words
+				suggested += overdraw(word_possible, int(1.1*len(word)))
 				all_possible += word_possible
 		self.letterq.intersect(all_possible)
 		self.letterq.fill_rand_from(suggested)
@@ -346,6 +379,22 @@ def loadtree(callback):
 		tree.feed(line + "$")
 	callback(tree)
 
+class StarFieldState(GameState):
+	def __init__(self, layer_count=3, star_count=100):
+		self.layers = list()
+		self.layer_count = layer_count
+		for i in range(layer_count):
+			field = [(random.randrange(width),random.randrange(height)) for i \
+					in range(star_count)]
+			self.layers.append(field)
+	def draw(self):
+		textSize(8)
+		for i, layer in enumerate(self.layers):
+			for x, y in layer:
+				fill((i + 1) * (255.0 / self.layer_count))
+				xoff = (millis() / 50.0) * (i + 1)
+				text(".", (x - xoff) % width, y)
+
 class TitleScreenState(GameState):
 	def __init__(self):
 		self.title = "LEXCONNEX"
@@ -415,11 +464,12 @@ class Sketch(GameStateManager):
 	def setup(self):
 		print "in sketch setup for some reason?"
 		frameRate(30)
-		size(800, 600)
+		size(640, 480)
 		fill(0)
 		background(0)
 		font = createFont("pcsenior.ttf", 16)
 		textFont(font)
+		sketch.add_state(StarFieldState())
 		sketch.add_state(TitleScreenState())
 		self.s = millis()
 	def draw(self):
