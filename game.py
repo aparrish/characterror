@@ -277,7 +277,6 @@ class PlayfieldState(GameState):
 
 	def remove_target(self, t):
 		assert t in self.targets, "couldn't find target!"
-		print t, t.content
 		idx = self.targets.index(t)
 		print "found target to remove at index %d" % idx
 		self.add_target_at_slot(idx)
@@ -330,7 +329,6 @@ class DisplayScoreState(GameState):
 		textSize(32)
 		text(str(self.score), width/2, height/2 + 8)
 	def keyPressed(self):
-		print key
 		if key == 27:
 			self.manager.remove_instances([PlayfieldState, ScoreState, TimerState])
 			titles = self.manager.get_instances([TitleScreenState])
@@ -411,15 +409,19 @@ class TimerState(GameState):
 	def draw(self):
 		delta = millis() - self.started
 		delta_seconds = int(delta / 1000)
+		remaining = self.seconds - delta_seconds
 		textSize(32)
 		textAlign(CENTER)
 		fill(255)
-		if delta_seconds >= self.seconds and self.called_callback is False:
-			self.called_callback = True
-			self.callback()
-			text("EXPIRED", width/2, height - 100)
-		else:
-			text(str(delta_seconds), width/2, height - 100)
+		if remaining <= 0:
+			remaining = 0
+			if self.called_callback is False:
+				self.called_callback = True
+				self.callback()
+
+		minutes = remaining / 60
+		second_remainder = remaining % 60
+		text("%d:%02d" % (minutes, second_remainder), width/2, height - 100)
 
 class StarFieldState(GameState):
 	def __init__(self, layer_count=3, star_count=100):
@@ -524,7 +526,6 @@ class TitleScreenState(GameState):
 
 class Sketch(GameStateManager):
 	def setup(self):
-		print "in sketch setup for some reason?"
 		frameRate(30)
 		size(640, 480)
 		fill(0)
