@@ -8,6 +8,7 @@ from lettertree import LetterTree
 from tweener import Tweener
 
 from java import lang
+from ddf.minim import Minim
 
 # janky but accurate!
 letterprob = ''.join([
@@ -208,6 +209,7 @@ class PlayfieldState(GameState):
 			elif keyCode == DOWN:
 				self.fighter.down()
 			elif keyCode == RIGHT: # discard letter
+				sounds['discard'].play(0)
 				self.letterq.pop()
 				self.populate_queue()
 		if key == ord('\n'):
@@ -221,10 +223,12 @@ class PlayfieldState(GameState):
 			return
 		t.active = False
 		if self.tree.is_word(t.content):
+			sounds['success'].play(0)
 			self.score_target(t)
 			T.addTween(t, alpha=-255, textsize=16,
 				onCompleteFunction=lambda: self.remove_target(t))
 		else:
+			sounds['failure'].play(0)
 			self.scorer.combobreak(t.x + len(t.content)*16, t.y)
 			T.addTween(t, alpha=-255, textsize=16,
 				onCompleteFunction=lambda: self.remove_target(t))
@@ -234,6 +238,7 @@ class PlayfieldState(GameState):
 		t = self.targets[self.fighter.pos]
 		if not(t.active):
 			return
+		sounds['shoot'].play(0)
 		t.active = False
 		popped = self.letterq.pop()
 		# create sprite
@@ -267,10 +272,12 @@ class PlayfieldState(GameState):
 			if self.tree.is_terminal(t.content):
 				t.active = False
 				if self.tree.is_word(t.content):
+					sounds['success'].play(0)
 					self.score_target(t)
 					T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
 						onCompleteFunction=compl(t))
 				else:
+					sounds['failure'].play(0)
 					self.scorer.combobreak(t.x + len(t.content)*16, t.y)
 					T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
 						onCompleteFunction=compl(t))
@@ -303,6 +310,7 @@ class PlayfieldState(GameState):
 
 	def timer_done(self):
 		self.paused = True
+		sounds['etude2'].play(0)
 		for sp in self.letter_sprites:
 			T.removeTweeningFrom(sp)
 		self.manager.add_state(DisplayScoreState(self.scorer.score))
@@ -404,15 +412,28 @@ class TimerState(GameState):
 		self.seconds = seconds
 		self.callback = callback
 		self.called_callback = False
+		self.last_remaining = 0
 	def start(self):
 		self.started = millis()
 	def draw(self):
 		delta = millis() - self.started
 		delta_seconds = int(delta / 1000)
 		remaining = self.seconds - delta_seconds
+
+		# play tick if eight or fewer seconds left
+		if remaining != self.last_remaining and remaining <= 8 and remaining > 0:
+			sounds['tick'].play(0)
+		self.last_remaining = remaining
+
+		# red if only one eight of the time remains
 		textSize(32)
 		textAlign(CENTER)
-		fill(255)
+		if remaining <= self.seconds / 8:
+			fill(255, 0, 0)
+		else:
+			fill(255)
+
+		# call callback if time's up
 		if remaining <= 0:
 			remaining = 0
 			if self.called_callback is False:
@@ -515,6 +536,7 @@ class TitleScreenState(GameState):
 		sketch.add_state(timer)
 		sketch.add_state(playfield)
 		timer.start()
+		sounds['etude1'].play(0)
 
 	def fade_in(self):
 		self.manager.unmute(self)
@@ -545,9 +567,20 @@ class Sketch(GameStateManager):
 
 T = Tweener()
 sketch = Sketch()
+minim = None
+sounds = dict()
 
 def setup():
+	global minim
 	sketch.setup()
+	minim = Minim(this)
+	sounds['shoot'] = minim.loadSnippet("shoot.wav")
+	sounds['discard'] = minim.loadSnippet("discard.wav")
+	sounds['failure'] = minim.loadSnippet("failure.wav")
+	sounds['success'] = minim.loadSnippet("success.wav")
+	sounds['etude1'] = minim.loadSnippet("etude1.wav")
+	sounds['etude2'] = minim.loadSnippet("etude2.wav")
+	sounds['tick'] = minim.loadSnippet("tick.wav")
 def draw():
 	sketch.draw()
 def mouseClicked():
@@ -556,4 +589,8 @@ def keyPressed():
 	if key == 27:
 		this.key = '\0'
 	sketch.keyPressed()
+def stop():
+	for snip in sounds.vales():
+		snip.close()
+	minim.stop()
 
