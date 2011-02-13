@@ -112,7 +112,6 @@ class Fighter(object):
 		T.addTween(self.letterq, y=(newy-self.y), tweenTime=250,
 			tweenType=T.OUT_EXPO)
 	def draw(self):
-		# draw fighter
 		textAlign(LEFT)
 		textSize(16)
 		for i, (ch, col) in enumerate(zip(self.animation[self.curframe],
@@ -224,7 +223,7 @@ class PlayfieldState(GameState):
 			T.addTween(t, alpha=-255, textsize=16,
 				onCompleteFunction=lambda: self.remove_target(t))
 		else:
-			self.scorer.combobreak(t.x, t.y)
+			self.scorer.combobreak(t.x + len(t.content)*16, t.y)
 			T.addTween(t, alpha=-255, textsize=16,
 				onCompleteFunction=lambda: self.remove_target(t))
 
@@ -247,7 +246,6 @@ class PlayfieldState(GameState):
 			onCompleteFunction=lambda: self.letter_arrived(sprite, destpos))
 		# add to list so we can draw it
 		self.letter_sprites.append(sprite)
-		self.scorer.score_letter(popped, destx, desty)
 
 	def letter_arrived(self, sprite, pos):
 		# called from fire(), removes sprite, adds to string, populates
@@ -256,6 +254,8 @@ class PlayfieldState(GameState):
 		# add letter to target string, reactivate
 		self.targets[pos].subsume(sprite.let)
 		self.targets[pos].active = True
+		if self.tree.is_prefix(self.targets[pos].content):
+			self.scorer.score_letter(sprite.let, sprite.x, sprite.y)
 		self.cull_and_score_terminals()
 		self.populate_queue()
 
@@ -269,7 +269,7 @@ class PlayfieldState(GameState):
 					T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
 						onCompleteFunction=compl(t))
 				else:
-					self.scorer.combobreak(t.x, t.y)
+					self.scorer.combobreak(t.x + len(t.content)*16, t.y)
 					T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
 						onCompleteFunction=compl(t))
 
@@ -284,7 +284,8 @@ class PlayfieldState(GameState):
 		self.add_target_at_slot(idx)
 
 	def score_target(self, target):
-		self.scorer.score_word(target.content, target.x, target.y)
+		self.scorer.score_word(target.content, target.x + (len(target.content)*20),
+			target.y)
 
 	def populate_queue(self):
 		words = [t.content for t in self.targets]
@@ -319,43 +320,34 @@ class ScoreState(GameState):
 
 	def __init__(self):
 		self.score = 0
-		self.multiplier = 1.0
+		self.multiplier = 10
 		self.score_sprites = list()
 
 	def score_letter(self, let, x, y):
 		letscore = 100 * self.multiplier
 		sprite = StringSprite(str(letscore), x, y, textsize=8)
-		T.addTween(sprite, textsize=8, y=-32, a=-255, tweenTime=1000,
-			tweenType=T.OUT_EXPO,
+		T.addTween(sprite, y=-32, a=-255, tweenTime=1500, tweenType=T.OUT_EXPO,
 			onCompleteFunction=lambda: self.remove_sprite(sprite))
 		self.score_sprites.append(sprite)
 		self.score += letscore
-		self.multiplier += 0.1
+		self.multiplier += 1
 
 	def score_word(self, word, x, y):
-		wordscore = 0
-		for let in word:
-			if let in 'qjxz':
-				wordscore += 5000
-			elif let in 'vwkf':
-				wordscore += 2500
-			else:
-				wordscore += 1000
-		wordscore = int(wordscore * self.multiplier)
+		wordscore = int(((len(word)*len(word))*0.5) * 1000)
+		wordscore = wordscore * self.multiplier
 		sprite = StringSprite(str(wordscore), textsize=8, x=x, y=y, r=0, g=255, b=0)
-		T.addTween(sprite, textsize=8, y=(y-32), g=0, a=0, tweenTime=1000,
+		T.addTween(sprite, y=-32, g=0, a=-127, tweenTime=1000,
 			tweenType=T.OUT_EXPO,
 			onCompleteFunction=lambda: self.remove_sprite(sprite))
 		self.score_sprites.append(sprite)
 		self.score += wordscore
-		self.multiplier += 1
+		self.multiplier += 10
 
 	def combobreak(self, x, y):
-		self.multiplier = 1.0
+		self.multiplier = 10
 		sprite = StringSprite("BREAK", x, y, textsize=8,
 			r=255, g=0, b=0)
-		T.addTween(sprite, textsize=8, y=(y-32), a=0, tweenTime=1000,
-			tweenType=T.OUT_EXPO,
+		T.addTween(sprite, y=-32, a=-127, tweenTime=1000, tweenType=T.OUT_EXPO,
 			onCompleteFunction=lambda: self.remove_sprite(sprite))
 		self.score_sprites.append(sprite)
 
