@@ -17,6 +17,11 @@ x sound effects!
 
 - figure out how to build/package this stuff. HASSLE
 	- could just be launch4j for windows, stupid app wrapper for mac?
+	- but still have to figure out how to make the applet
+		- custom/hacked Runner.java attempts to read "sketch.py" from jar
+		- add all resources to jar (though not sure if the Runner class
+			will be smart enough to look inside the jar)
+		- http://www.rgagnon.com/javadetails/java-0077.html
 
 - esc key brings up help, way to quit to title in playfield state
 

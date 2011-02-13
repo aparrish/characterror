@@ -11,31 +11,33 @@ from java import lang
 from ddf.minim import Minim
 
 # janky but accurate!
-letterprob = ''.join([
-	'qjx',
-	'z' * 2,
-	'v' * 5,
-	'w' * 6,
-	'k' * 7,
-	'f' * 8,
-	'y' * 9,
-	'b' * 12,
-	'h' * 14,
-	'm' * 17,
-	'p' * 17,
-	'g' * 17,
-	'u' * 20,
-	'c' * 22,
-	'd' * 22,
-	'l' * 31,
-	't' * 36,
-	'n' * 37,
-	'o' * 37,
-	'r' * 42,
-	'a' * 47,
-	'i' * 48,
-	's' * 56,
-	'e' * 69])
+initletterprob = ''.join([
+	'x' * 1,
+	'y' * 1,
+	'z' * 1,
+	'q' * 1,
+	'j' * 2,
+	'k' * 3,
+	'v' * 4,
+	'n' * 5,
+	'w' * 5,
+	'i' * 6,
+	'u' * 7,
+	'o' * 7,
+	'l' * 7,
+	'h' * 8,
+	'g' * 8,
+	'e' * 9,
+	'f' * 9,
+	't' * 12,
+	'r' * 13,
+	'm' * 13,
+	'd' * 13,
+	'a' * 13,
+	'b' * 14,
+	'p' * 19,
+	'c' * 20,
+	's' * 28])
 
 play_offset_x = 100
 fighter_offset_x = 250
@@ -131,9 +133,6 @@ class LetterQueue(object):
 		self.length = length
 		self.x = x
 		self.y = y
-	def fillrand(self):
-		for i in range(self.length):
-			self.q.append(random.choice(letterprob))
 	def append(self, letter):
 		assert type(letter) is str, "letter is not string"
 		assert len(letter) == 1, "letter is not string of length 1"
@@ -164,7 +163,7 @@ class LetterQueue(object):
 			text(ch, self.x + (i*20), self.y + yoff)
 
 class PlayfieldState(GameState):
-	def __init__(self, tree, scorer, slots=5):
+	def __init__(self, tree, scorer, mode, slots=5):
 		self.tree = tree
 		self.letterq = LetterQueue(5, play_offset_x + fighter_offset_x + 96,
 			play_offset_y)
@@ -176,9 +175,10 @@ class PlayfieldState(GameState):
 		self.letter_sprites = list()
 		self.scorer = scorer
 		self.paused = False
+		self.mode = mode
 
 	def add_target_at_slot(self, idx):
-		target = TargetString(random.choice(letterprob),
+		target = TargetString(random.choice(initletterprob),
 			self.tree, x=-20, y=play_offset_y+(idx*40))
 		T.addTween(target, x=(play_offset_x+20), tweenTime=200,
 			tweenType=T.OUT_EXPO, tweenDelay=1000)
@@ -313,11 +313,12 @@ class PlayfieldState(GameState):
 		sounds['etude2'].play(0)
 		for sp in self.letter_sprites:
 			T.removeTweeningFrom(sp)
-		self.manager.add_state(DisplayScoreState(self.scorer.score))
+		self.manager.add_state(DisplayScoreState(self.scorer.score, self.mode))
 
 class DisplayScoreState(GameState):
-	def __init__(self, score):
+	def __init__(self, score, mode):
 		self.score = score
+		self.mode = mode
 	def draw(self):
 		fill(0, 128)
 		rect(0, 0, width, height)
@@ -329,13 +330,15 @@ class DisplayScoreState(GameState):
 |                           |
 |                           |
 |       <Esc> for menu      |
+| <C> to copy tweet w/score |
+|     to your clipboard     |
 +---------------------------+"""
 		textAlign(CENTER, CENTER)
 		textSize(16)
 		fill(255)
 		text(templ, width/2, height/2)
 		textSize(32)
-		text(str(self.score), width/2, height/2 + 8)
+		text(str(self.score), width/2, height/2 - 16)
 	def keyPressed(self):
 		if key == 27:
 			self.manager.remove_instances([PlayfieldState, ScoreState, TimerState])
@@ -343,6 +346,17 @@ class DisplayScoreState(GameState):
 			assert len(titles) == 1, "wrong number of title screen states"
 			titles[0].fade_in()
 			self.manager.remove_state(self)
+		elif key == ord('c'):
+			print 'attempting to copy'
+			modestrs = {'90sec': 'in ninety seconds', '4min': 'in four minutes',
+				'challenge': 'with only 100 letters'}
+			modestr = modestrs.get(self.mode, '')
+			from hashlib import md5
+			shorthash = md5(str(self.score)+self.mode).hexdigest()[:6]
+			from java.awt.datatransfer import StringSelection
+			from java.awt import Toolkit
+			clipboard = Toolkit.getDefaultToolkit().getSystemClipboard()
+			clipboard.setContents(StringSelection("I just scored %d points %s on LexConnex! http://shorturl/something?%s" % (self.score, modestr, shorthash)), None)
 
 class StringSprite(object):
 	def __init__(self, content, x, y, textsize=16, r=255, g=255, b=255, a=255):
@@ -561,7 +575,7 @@ class TitleScreenState(GameState):
 				remaining_time = 240
 			scorer = ScoreState()
 			sketch.add_state(scorer)
-			playfield = PlayfieldState(self.tree, scorer)
+			playfield = PlayfieldState(self.tree, scorer, opt)
 			if opt == 'challenge':
 				pass
 				# add challenge state here
