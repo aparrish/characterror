@@ -12,5 +12,13 @@
 - finalize mechanics for discarding/rearranging letters
 	- implement finalized mechanics
 
+- sound effects!
+
 - figure out how to build/package this stuff. HASSLE
+
+OPTIONALS BUT NICE
+
+- keep track of longest word, highest scoring word, highest
+	multiplier, etc.
+- copy link to "tweet this score" to clipboard?
 
