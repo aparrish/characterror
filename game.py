@@ -220,6 +220,12 @@ class PlayfieldState(GameState):
 			self.fire()
 		elif key == ord('x'):
 			self.shuffle_queue()
+		elif key == 27:
+			self.paused = True
+			self.manager.add_state(PauseHelpState(callback=self.unpause))
+
+	def unpause(self):
+		self.paused = False
 
 	def shuffle_queue(self):
 		self.letterq.shuffle()
@@ -327,6 +333,40 @@ class PlayfieldState(GameState):
 			T.removeTweeningFrom(sp)
 		self.manager.add_state(DisplayScoreState(self.scorer.score, self.mode))
 
+class PauseHelpState(GameState):
+	def __init__(self, callback):
+		self.callback = callback
+		self.init_millis = millis()
+	def draw(self):
+		fill(0, 128)
+		rect(0, 0, width, height)
+		fill(255)
+		textAlign(CENTER)
+		textSize(64)
+		text("HELP", width/2, 64)
+		textAlign(LEFT)
+		textSize(16)
+		text("""
+<UP>/<DN> select target
+<Z>       fire letter into target
+<ENTER>   detonate target
+<X>       shuffle letter magazine
+
+Hit <ESC> again to quit to menu, or
+any other key to return to the game.""", 32, 96)
+	def keyPressed(self):
+		# wait a second before registering keypresses
+		if millis() > self.init_millis + 1000:
+			if key == 27:
+				self.manager.remove_instances([PlayfieldState, ScoreState, TimerState,
+					ChallengeState])
+				titles = self.manager.get_instances([TitleScreenState])
+				assert len(titles) == 1, "wrong number of title screen states"
+				titles[0].fade_in()
+			else:
+				self.callback()
+			self.manager.remove_state(self)
+		
 class DisplayScoreState(GameState):
 	def __init__(self, score, mode):
 		self.score = score
