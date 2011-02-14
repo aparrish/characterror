@@ -507,7 +507,7 @@ class StarFieldState(GameState):
 			for x, y in layer:
 				fill((i + 1) * (255.0 / self.layer_count))
 				xoff = (millis() / 25.0) * (i + 1)
-				text(".", (x - xoff) % width, y)
+				text(".", (x + xoff) % width, y)
 
 def loadtree(callback):
 	print "loading wordlist"
