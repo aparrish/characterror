@@ -176,6 +176,10 @@ class PlayfieldState(GameState):
 		self.scorer = scorer
 		self.paused = False
 		self.mode = mode
+		self.fire_listeners = list()
+
+	def add_fire_listener(self, listener):
+		self.fire_listeners.append(listener)
 
 	def add_target_at_slot(self, idx):
 		target = TargetString(random.choice(initletterprob),
@@ -253,6 +257,9 @@ class PlayfieldState(GameState):
 			onCompleteFunction=lambda: self.letter_arrived(sprite, destpos))
 		# add to list so we can draw it
 		self.letter_sprites.append(sprite)
+		for listener in self.fire_listeners:
+			if hasattr(listener, 'fired'):
+				listener.fired(popped)
 
 	def letter_arrived(self, sprite, pos):
 		# called from fire(), removes sprite, adds to string, populates
@@ -341,7 +348,8 @@ class DisplayScoreState(GameState):
 		text(str(self.score), width/2, height/2 - 16)
 	def keyPressed(self):
 		if key == 27:
-			self.manager.remove_instances([PlayfieldState, ScoreState, TimerState])
+			self.manager.remove_instances([PlayfieldState, ScoreState, TimerState,
+				ChallengeState])
 			titles = self.manager.get_instances([TitleScreenState])
 			assert len(titles) == 1, "wrong number of title screen states"
 			titles[0].fade_in()
@@ -349,7 +357,7 @@ class DisplayScoreState(GameState):
 		elif key == ord('c'):
 			print 'attempting to copy'
 			modestrs = {'90sec': 'in ninety seconds', '4min': 'in four minutes',
-				'challenge': 'with only 100 letters'}
+				'challenge': 'with only 50 letters'}
 			modestr = modestrs.get(self.mode, '')
 			from hashlib import md5
 			shorthash = md5(str(self.score)+self.mode).hexdigest()[:6]
@@ -420,6 +428,24 @@ class ScoreState(GameState):
 		textAlign(LEFT)
 		text(str(self.score), 16, 16)
 		text(str(self.multiplier), width-100, 16)
+
+class ChallengeState(GameState):
+	def __init__(self, target_count, callback):
+		self.target_count = target_count
+		self.fire_count = 0
+		self.callback = callback
+	def fired(self, let):
+		self.fire_count += 1
+		if self.fire_count >= self.target_count:
+			self.callback()
+	def draw(self):
+		textSize(32)
+		textAlign(CENTER)
+		if self.fire_count > self.target_count * 0.9:
+			fill(255, 0, 0)
+		else:
+			fill(255)
+		text("%d / %d" % (self.fire_count, self.target_count), width/2, height-100)
 
 class TimerState(GameState):
 	def __init__(self, seconds, callback):
@@ -496,7 +522,7 @@ class TitleScreenState(GameState):
 			('instructions', 'How to play', 'Story and tutorial'),
 			('90sec','Timed game: 90 seconds','Get the highest score in ninety seconds!'),
 			('4min','Timed game: 4 minutes','You have four minutes. How high can you score?'),
-			('challenge','100 letter challenge', "The timer's off. How many points can you score with just 100 letters?"),
+			('challenge','50 letter challenge', "The timer's off. How many points can you score with just 50 letters?"),
 			('credits', 'Credits', "Who made this game?")]
 		self.selected = 0
 
@@ -577,8 +603,9 @@ class TitleScreenState(GameState):
 			sketch.add_state(scorer)
 			playfield = PlayfieldState(self.tree, scorer, opt)
 			if opt == 'challenge':
-				pass
-				# add challenge state here
+				challenge = ChallengeState(50, lambda: playfield.timer_done())
+				sketch.add_state(challenge)
+				playfield.add_fire_listener(challenge)
 			else:
 				timer = TimerState(remaining_time, lambda: playfield.timer_done())
 				sketch.add_state(timer)
