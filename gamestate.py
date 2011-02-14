@@ -7,7 +7,6 @@ class GameStateManager(object):
 		self.states = list()
 		self.muted_states = set()
 	def add_state(self, state):
-		print "adding state " + str(state)
 		self.states.append(state)
 		state.manager = self
 	def remove_state(self, state):

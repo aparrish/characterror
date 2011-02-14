@@ -303,7 +303,6 @@ class PlayfieldState(GameState):
 	def remove_target(self, t):
 		assert t in self.targets, "couldn't find target!"
 		idx = self.targets.index(t)
-		print "found target to remove at index %d" % idx
 		self.add_target_at_slot(idx)
 
 	def remove_target_idx(self, idx):
@@ -400,7 +399,6 @@ class DisplayScoreState(GameState):
 			titles[0].fade_in()
 			self.manager.remove_state(self)
 		elif key == ord('c'):
-			print 'attempting to copy'
 			modestrs = {'90sec': 'in ninety seconds', '4min': 'in four minutes',
 				'challenge': 'with only 50 letters'}
 			modestr = modestrs.get(self.mode, '')
@@ -550,7 +548,6 @@ class StarFieldState(GameState):
 				text(".", (x + xoff) % width, y)
 
 def loadtree(callback):
-	print "loading wordlist"
 	tree = LetterTree()
 	for line in open('wordlist_short'):
 		line = line.strip()
@@ -578,7 +575,6 @@ class TitleScreenState(GameState):
 	def init_loading_threads(self):
 		# just running one thread to load resources for now
 		self.thread = Thread(target=loadtree, args=(self.tree_load_done,))
-		print "starting thread"
 		self.thread.start()
 
 	def tree_load_done(self, tree):
@@ -818,9 +814,30 @@ class CreditsState(GameState):
 	def __init__(self, title_screen):
 		self.title_screen = title_screen
 	def draw(self):
+		fill(255)
 		textAlign(CENTER)
+		textSize(64)
+		text("CREDITS", width/2, 64)
+		textAlign(LEFT)
 		textSize(16)
-		text("credits stuff here")
+		text("""
+Game by Adam Parrish
+  decontextualize.com
+
+Made for Experimental Gameplay
+Project's February 2011 competition
+  experimentalgameplay.com
+
+(Yes, the stars are ASCII 0x2E)
+
+Programmed with processing.py
+  github.com/jdf/processing.py
+
+Thanks to Ben Harling for the Python
+port of Tweener!
+""", 32, 96)
+		textAlign(CENTER)
+		text("Hit <Z> to continue.", width/2, 450)
 	def keyPressed(self):
 		if key == ord('z'):
 			self.title_screen.fade_in()
