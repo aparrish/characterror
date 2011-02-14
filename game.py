@@ -154,6 +154,8 @@ class LetterQueue(object):
 		return self.q.pop(0)
 	def letters(self):
 		return self.q
+	def shuffle(self):
+		random.shuffle(self.q)
 	def draw(self):
 		textAlign(LEFT)
 		for i, ch in enumerate(self.letters()):
@@ -212,14 +214,17 @@ class PlayfieldState(GameState):
 				self.fighter.up()
 			elif keyCode == DOWN:
 				self.fighter.down()
-			elif keyCode == RIGHT: # discard letter
-				sounds['discard'].play(0)
-				self.letterq.pop()
-				self.populate_queue()
 		if key == ord('\n'):
 			self.detonate()
-		if key == ord('z'):
+		elif key == ord('z'):
 			self.fire()
+		elif key == ord('x'):
+			self.shuffle_queue()
+
+	def shuffle_queue(self):
+		self.letterq.shuffle()
+		sounds['discard'].play(0)
+		self.scorer.attenuate_multiplier(0.5)
 
 	def detonate(self):
 		t = self.targets[self.fighter.pos]
@@ -410,12 +415,16 @@ class ScoreState(GameState):
 		self.multiplier += 10
 
 	def combobreak(self, x, y):
-		self.multiplier = 10
+		if self.multiplier > 10:
+			self.multiplier = 10
 		sprite = StringSprite("BREAK", x, y, textsize=8,
 			r=255, g=0, b=0)
 		T.addTween(sprite, y=-32, a=-127, tweenTime=1000, tweenType=T.OUT_EXPO,
 			onCompleteFunction=lambda: self.remove_sprite(sprite))
 		self.score_sprites.append(sprite)
+
+	def attenuate_multiplier(self, amount):
+		self.multiplier = int(self.multiplier * amount)
 
 	def remove_sprite(self, sprite):
 		self.score_sprites.remove(sprite)
