@@ -475,8 +475,8 @@ class ScoreState(GameState):
 		fill(255)
 		textSize(16)
 		textAlign(LEFT)
-		text(str(self.score), 16, 16)
-		text(str(self.multiplier), width-100, 16)
+		text("SCORE: %012d" % self.score, 16, 16)
+		text("x%d" % self.multiplier, width-100, 16)
 
 class ChallengeState(GameState):
 	def __init__(self, target_count, callback):
