@@ -6,7 +6,7 @@ x simple menu:
 	- 100 Letter Challenge
 	- Credits
 
-- implement instructions screen
+x implement instructions screen
 - implement credits screen
 - implement 100 letter challenge (player gets 100 letters, no timer)
 
@@ -17,11 +17,6 @@ x sound effects!
 
 - figure out how to build/package this stuff. HASSLE
 	- could just be launch4j for windows, stupid app wrapper for mac?
-	- but still have to figure out how to make the applet
-		- custom/hacked Runner.java attempts to read "sketch.py" from jar
-		- add all resources to jar (though not sure if the Runner class
-			will be smart enough to look inside the jar)
-		- http://www.rgagnon.com/javadetails/java-0077.html
 
 - esc key brings up help, way to quit to title in playfield state
 
@@ -30,5 +25,10 @@ OPTIONALS BUT NICE
 - keep track of longest word, highest scoring word, highest
 	multiplier, etc.
 - high scores, at least for current session
-- copy link to "tweet this score" to clipboard?
+x copy link to "tweet this score" to clipboard?
+- applet?
+	- custom/hacked Runner.java attempts to read "sketch.py" from jar
+	- add all resources to jar (though not sure if the Runner class
+		will be smart enough to look inside the jar)
+	- http://www.rgagnon.com/javadetails/java-0077.html
 

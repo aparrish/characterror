@@ -301,7 +301,7 @@ class PlayfieldState(GameState):
 		all_possible = list()
 		for word in words:
 			if self.tree.is_prefix(word):
-				word_possible = [x for x in self.tree.alts(word)]
+				word_possible = [x for x in self.tree.alts(word) if x != '$']
 				# fill queue with more letters to finish longer words
 				suggested += overdraw(word_possible, int(1.1*len(word)))
 				all_possible += word_possible
@@ -586,7 +586,7 @@ class TitleScreenState(GameState):
 			sketch.add_state(playfield)
 			sounds['etude1'].play(0)
 		elif opt == 'instructions':
-			sketch.add_state(InstructionsState(self))
+			sketch.add_state(InstructionsState(self, self.tree))
 		elif opt == 'credits':
 			sketch.add_state(CreditsState(self))
 
@@ -599,19 +599,143 @@ class TitleScreenState(GameState):
 		self.fading = False
 
 class InstructionsState(GameState):
-	def __init__(self, title_screen):
+	def __init__(self, title_screen, tree):
 		self.title_screen = title_screen
 		self.page = 0
+		self.tree = tree
+		self.init_demo()
+	def init_demo(self):
+		self.letterq = LetterQueue(5, play_offset_x + fighter_offset_x + 96,
+			play_offset_y)
+		for ch in 'cram':
+			self.letterq.append(ch)
+		self.fighter = Fighter(self.letterq, 1, 0)
+		self.target = TargetString('s', self.tree, play_offset_x, play_offset_y)
+		self.letter_sprites = list()
 	def draw(self):
-		textAlign(CENTER)
-		textSize(16)
-		text("stuff here " + str(self.page))
+		if self.page == 0:
+			fill(255)
+			textAlign(CENTER)
+			textSize(64)
+			text("THE STORY", width/2, 64)
+			textAlign(LEFT)
+			textSize(16)
+			text("""
+You are CAPTAIN S. PELLER,
+starfighter pilot extraordinaire.
+Your mission: defeat the KAHRHAK-
+TERRORS, evil space aliens bent on
+galactic domination. Their only
+weakness: a KAHRHAK will subsume
+any letter fired into it. Form an
+English word, and the KAHRHAK can
+be detonated, and thereby destroyed.
+""", 32, 96)
+			pushMatrix()
+			translate(0, 232)
+			self.letterq.draw()
+			self.fighter.draw()
+			self.target.draw()
+			for sp in self.letter_sprites:
+				sp.draw()
+			popMatrix()
+			textAlign(CENTER)
+			textSize(16)
+			fill(255)
+			text("Hit <Z> to fire letters, then\n<ENTER> when the word is green!",
+				width/2, 390)
+		elif self.page == 1:
+			fill(255)
+			textAlign(CENTER)
+			textSize(64)
+			text("CONTROLS", width/2, 64)
+			textAlign(LEFT)
+			textSize(16)
+			text("""
+<UP>/<DN> select target
+<Z>       fire letter into target
+<ENTER>   detonate target
+<X>       shuffle letter magazine
+<ESC>     help/quit
+
+Words must be between three and ten
+letters long. This game uses the
+SOWPODS dictionary.
+
+WARNING: Detonating a target that is
+not green will reset your score
+multiplier. Shuffling your magazine
+may help you get at the letter you
+want, but will cut your multiplier
+in half.
+""", 32, 96)
+			textAlign(CENTER)
+			text("Hit <Z> to continue.", width/2, 450)
+		elif self.page == 2:
+			fill(255)
+			textAlign(CENTER)
+			textSize(48)
+			text("HINTS & TIPS", width/2, 64)
+			textAlign(LEFT)
+			textSize(16)
+			text("""
+* Longer words earn more points!
+* Your score multiplier increases
+  for every letter landed, and for
+  every valid word detonated.
+* If a target contains a string that
+  could never begin a valid English
+  word, the target is destroyed and
+  your score multiplier reset.
+* Your magazine will always *only*
+  contain letters that can combine
+  with targets to begin valid English
+  words. Exercise your vocabulary!
+* Words that can't be extended to
+  form longer words will be detonated
+  automatically.
+""", 32, 96)
+			textAlign(CENTER)
+			text("Hit <Z> to continue.", width/2, 450)
+
+	def fire(self):
+		if not(self.target.active):
+			return
+		self.target.active = False
+		sounds['shoot'].play(0)
+		popped = self.letterq.pop()
+		sprite = LetterSprite(popped, self.fighter.x, self.fighter.y)
+		destx = play_offset_x + (len(self.target.content) * 16)
+		desty = play_offset_y + (self.fighter.pos * 40)
+		destpos = self.fighter.pos
+		T.addTween(sprite, x=(destx-self.fighter.x), y=(desty-self.fighter.y),
+			tweenTime=400, tweenType=T.OUT_EXPO,
+			onCompleteFunction=lambda: self.letter_arrived(sprite, destpos))
+		self.letter_sprites.append(sprite)
+
+	def letter_arrived(self, sprite, pos):
+		self.letter_sprites.remove(sprite)
+		self.target.subsume(sprite.let)
+		self.target.active = True
+
+	def advance_page(self):
+		self.page += 1
+
 	def keyPressed(self):
-		if key == ord('z'):
-			self.page += 1
-		if self.page == 4:
-			self.title_screen.fade_in()
-			self.manager.remove_state(self)
+		if self.page == 0:
+			if key == ord('z') and self.target.content != "scram":
+				self.fire()
+			if key == ord('\n') and self.target.content == "scram":
+				sounds['success'].play(0)
+				T.addTween(self.target, alpha=-255, textsize=16, tweenTime=1000,
+					onCompleteFunction=lambda: self.advance_page())
+		elif self.page == 1:
+			if key == ord('z'):
+				self.page = 2
+		elif self.page == 2:
+			if key == ord('z'):
+				self.title_screen.fade_in()
+				self.manager.remove_state(self)
 
 class CreditsState(GameState):
 	def __init__(self, title_screen):
