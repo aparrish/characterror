@@ -519,7 +519,7 @@ def loadtree(callback):
 
 class TitleScreenState(GameState):
 	def __init__(self):
-		self.title = "LEXCONNEX"
+		self.title = "CHARACTERROR"
 		self.alpha = 255
 		self.colors = [(64, 192, 0), (96, 224, 32), (128, 255, 64),
 			(160, 0, 96), (192, 32, 128), (224, 64, 160),
@@ -546,7 +546,7 @@ class TitleScreenState(GameState):
 
 	def draw(self):
 		# draw banner
-		textSize(64)
+		textSize(48)
 		textAlign(LEFT)
 		xcenter = width / 2.0
 		ypos = height / 3.0
@@ -556,9 +556,10 @@ class TitleScreenState(GameState):
 		idx = (frameCount / 32) % 9
 		this_col = self.colors[idx:] + self.colors[:idx]
 		for i, ch in enumerate(self.title):
+			i = i % len(self.colors)
 			fill(this_col[i][0], this_col[i][1], this_col[i][2], self.alpha)
 			text(ch, 0, 0)
-			translate(64, 0)
+			translate(48, 0)
 		popMatrix()
 
 		# loading or menu
@@ -659,13 +660,13 @@ class InstructionsState(GameState):
 			text("""
 You are CAPTAIN S. PELLER,
 starfighter pilot extraordinaire.
-Your mission: defeat the KAHRHAK-
+Your mission: defeat the CHARAC-
 TERRORS, evil space aliens bent on
-galactic domination. Their only
-weakness: a KAHRHAK will subsume
-any letter fired into it. Form an
-English word, and the KAHRHAK can
-be detonated, and thereby destroyed.
+galactic dominance. Their only
+weakness: a CHARACTERROR will
+subsume any letter fired into it.
+CHARACTERRORS forming English words
+can be detonated and thus destroyed.
 """, 32, 96)
 			pushMatrix()
 			translate(0, 232)

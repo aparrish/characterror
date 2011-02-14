@@ -1,17 +1,17 @@
 
 x simple menu:
-	- Instructions
-	- Timed Game: 2 minutes
-	- Timed Game: 5 minutes
-	- 100 Letter Challenge
+	x Instructions
+	x Timed Game: 2 minutes
+	x Timed Game: 5 minutes
+	x 100 Letter Challenge
 	- Credits
 
 x implement instructions screen
 - implement credits screen
-- implement 100 letter challenge (player gets 100 letters, no timer)
+x implement 100 letter challenge (player gets 100 letters, no timer)
 
-- finalize mechanics for discarding/rearranging letters
-	- implement finalized mechanics
+x finalize mechanics for discarding/rearranging letters
+	x implement finalized mechanics
 
 x sound effects!
 
@@ -19,6 +19,8 @@ x sound effects!
 	- could just be launch4j for windows, stupid app wrapper for mac?
 
 - esc key brings up help, way to quit to title in playfield state
+
+x need new name :(
 
 OPTIONALS BUT NICE
 
