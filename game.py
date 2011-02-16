@@ -67,6 +67,8 @@ class TargetString(object):
 			fill(0, 255, 0, self.alpha)
 		elif self.is_prefix:
 			fill(255, 255, 255, self.alpha)
+		else:
+			print "%s is neither word nor prefix" % self.content
 		textSize(self.textsize)
 		textAlign(LEFT)
 		for i, ch in enumerate(self.content):
@@ -111,8 +113,8 @@ class Fighter(object):
 		self.pos += 1
 		if self.pos > self.maxp - 1: self.pos = self.maxp
 		(newx, newy) = self.getxy_for_pos(self.pos)
-		T.addTween(self, y=(newy-self.y), tweenTime=200, tweenType=T.OUT_EXPO)
-		T.addTween(self.letterq, y=(newy-self.y), tweenTime=250,
+		T.addTween(self, y=(newy-self.y), tweenTime=150, tweenType=T.OUT_EXPO)
+		T.addTween(self.letterq, y=(newy-self.letterq.y), tweenTime=225,
 			tweenType=T.OUT_EXPO)
 	def draw(self):
 		textAlign(LEFT)
@@ -187,7 +189,7 @@ class PlayfieldState(GameState):
 		target = TargetString(random.choice(initletterprob),
 			self.tree, x=-20, y=play_offset_y+(idx*40))
 		T.addTween(target, x=(play_offset_x+20), tweenTime=200,
-			tweenType=T.OUT_EXPO, tweenDelay=1000)
+			tweenType=T.OUT_EXPO, tweenDelay=500)
 		self.targets[idx] = target
 
 	def draw(self):
@@ -209,12 +211,11 @@ class PlayfieldState(GameState):
 
 	def keyPressed(self):
 		if self.paused: return
-		if key == CODED:
-			if keyCode == UP:
+		if key == ord('i') or (key == CODED and keyCode == UP):
 				self.fighter.up()
-			elif keyCode == DOWN:
+		elif key == ord('k') or (key == CODED and keyCode == DOWN):
 				self.fighter.down()
-		if key == ord('\n'):
+		elif key == ord('\n'):
 			self.detonate()
 		elif key == ord('z'):
 			self.fire()
@@ -240,12 +241,12 @@ class PlayfieldState(GameState):
 		if self.tree.is_word(t.content):
 			sounds['success'].play(0)
 			self.score_target(t)
-			T.addTween(t, alpha=-255, textsize=16,
+			T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
 				onCompleteFunction=lambda: self.remove_target(t))
 		else:
 			sounds['failure'].play(0)
 			self.scorer.combobreak(t.x + len(t.content)*16, t.y)
-			T.addTween(t, alpha=-255, textsize=16,
+			T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
 				onCompleteFunction=lambda: self.remove_target(t))
 
 	def fire(self):
@@ -264,7 +265,7 @@ class PlayfieldState(GameState):
 		# completed
 		destpos = self.fighter.pos
 		T.addTween(sprite, x=(destx-self.fighter.x), y=(desty-self.fighter.y),
-			tweenTime=400, tweenType=T.OUT_EXPO,
+			tweenTime=200, tweenType=T.OUT_EXPO,
 			onCompleteFunction=lambda: self.letter_arrived(sprite, destpos))
 		# add to list so we can draw it
 		self.letter_sprites.append(sprite)
@@ -286,18 +287,18 @@ class PlayfieldState(GameState):
 
 	def cull_and_score_terminals(self):
 		compl = lambda x: self.remove_target(x)
-		for t in self.targets:
+		for i, t in enumerate(self.targets):
 			if self.tree.is_terminal(t.content):
 				t.active = False
 				if self.tree.is_word(t.content):
 					sounds['success'].play(0)
 					self.score_target(t)
-					T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
+					T.addTween(self.targets[i], alpha=-255, textsize=16, tweenTime=1000,
 						onCompleteFunction=compl(t))
 				else:
 					sounds['failure'].play(0)
 					self.scorer.combobreak(t.x + len(t.content)*16, t.y)
-					T.addTween(t, alpha=-255, textsize=16, tweenTime=500,
+					T.addTween(self.targets[i], alpha=-255, textsize=16, tweenTime=1000,
 						onCompleteFunction=compl(t))
 
 	def remove_target(self, t):
@@ -625,11 +626,10 @@ class TitleScreenState(GameState):
 			return
 		if self.fading:
 			return
-		if key == CODED:
-			if keyCode == UP:
-				self.selected -= 1
-			elif keyCode == DOWN:
-				self.selected += 1
+		if key == ord('i') or (key == CODED and keyCode == UP):
+			self.selected -= 1
+		elif key == ord('k') or (key == CODED and keyCode == DOWN):
+			self.selected += 1
 			self.selected = self.selected % len(self.menu)
 		elif key == ord('z'):
 			self.fading = True

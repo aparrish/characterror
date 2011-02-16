@@ -4,10 +4,10 @@ x simple menu:
 	x Timed Game: 2 minutes
 	x Timed Game: 5 minutes
 	x 100 Letter Challenge
-	- Credits
+	x Credits
 
 x implement instructions screen
-- implement credits screen
+x implement credits screen
 x implement 100 letter challenge (player gets 100 letters, no timer)
 
 x finalize mechanics for discarding/rearranging letters
@@ -17,10 +17,22 @@ x sound effects!
 
 - figure out how to build/package this stuff. HASSLE
 	- could just be launch4j for windows, stupid app wrapper for mac?
+	- mac package needs better values in plist
 
-- esc key brings up help, way to quit to title in playfield state
+x esc key brings up help, way to quit to title in playfield state
 
 x need new name :(
+
+- hide title and starfield while loading (to prevent jankiness)
+x tighten up tweens on fire (for faster response time)
+
+- site (or just page on blog)
+- README
+- license
+
+BUGS
+
+x "caught a weird bug where i moved the arrows quickly and my magazine got offset by a row" - rob dubbin
 
 OPTIONALS BUT NICE
 
