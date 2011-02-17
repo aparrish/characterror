@@ -72,3 +72,5 @@ projects. More information here:
 	http://www.jython.org/
 	http://processing.org/
 
+Building the game for Windows requires launch4j, which can be acquired here:
+  http://launch4j.sourceforge.net/

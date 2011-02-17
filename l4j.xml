@@ -1,8 +1,8 @@
 <launch4jConfig>
   <dontWrapJar>false</dontWrapJar>
   <headerType>gui</headerType>
-  <jar>build/resources/processing-py.jar</jar>
-  <outfile>build/Characterror.exe</outfile>
+  <jar>build/win/Characterror/resources/processing-py.jar</jar>
+  <outfile>build/win/Characterror/Characterror.exe</outfile>
   <errTitle></errTitle>
   <cmdLine>game.py</cmdLine>
   <chdir>resources</chdir>
