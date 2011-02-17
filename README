@@ -1,0 +1,74 @@
+Characterror
+============
+
+A game by Adam Parrish
+http://decontextualize.com/projects/characterror
+
+Running the game
+----------------
+
+This game requires Java. If you can't use one of the included executable files,
+you can run the game from the command line like so:
+
+  $ java -Xms512m -Xmx1024m -jar processing-py.jar game.py
+
+Instructions
+------------
+
+Your goal is to complete words by "firing" letters from your magazine on the
+right side of the screen onto the end of one of the strings of letters on
+the left side of the screen. Longer words will garner exponentially more
+points.
+
+Your score is also affected by your multiplier, which increases as you fire
+letters and form words. Your multiplier will be reset if you land a letter
+that makes a string that can't be the beginning of a valid English word.
+
+When a string turns green, that means it's a valid English word and can now
+be "detonated." Detonating a word immediately scores it, and starts a new
+string in that slot. Note that green words can also potentially be the
+beginning of an even longer valid word!
+
+Strings that form valid words that can't be made longer, or strings that can't
+ever form valid English words, will be detonated automatically.
+
+The game keeps track of what words can be formed from the strings currently
+on the left side of the screen, and will only ever allow letters in the
+magazine that can be the next letter in forming a valid English word. It's
+technically impossible to get stuck, though you may find yourself stretching
+your vocabulary to its limits.
+
+The game has three modes: 90 second time trial, 4 minute time trial, and 50
+character puzzle mode.
+
+Controls:
+
+* UP/DOWN: select which string to fire into
+* Z: fire letter
+* X: shuffle magazine (will halve your multiplier)
+* ENTER: detonate word at selected slot
+* ESC: pause/help
+
+Credits and license information
+-------------------------------
+
+The source files in this distribution that I wrote carry an ISC license,
+which is included at the top of the file. Media files in the data/
+directory are distributed under a Creative Commons Attribution license:
+http://creativecommons.org/licenses/by/3.0/
+
+The processing-py.jar file comes from Jonathan Feinberg's excellent
+processing.py project, which is distributed under the terms of the Apache
+license. More information here: https://github.com/jdf/processing.py
+
+The tweener.py library was written by Ben Harling, and carries an MIT license.
+See that file for more information.
+
+The file pcsenior.ttf comes from codeman38's excellent font collection,
+available here: http://www.zone38.net/font/
+
+The project additionally makes use of software from the Jython and Processing
+projects. More information here:
+	http://www.jython.org/
+	http://processing.org/
+
