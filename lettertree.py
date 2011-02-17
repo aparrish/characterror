@@ -1,7 +1,18 @@
-# FIXME: some way to keep track of frequencies
+# Copyright (c) 2011, Adam Parrish <adam@decontextualize.com>
+# 
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 def yield_keys_recurse(d, depth):
-#	print "what? " + str(d)
 	if depth == 0: return
 	for item in d.keys():
 		if item != '_count':
@@ -16,7 +27,6 @@ class LetterTree(object):
 		self.data = dict()
 
 	def feed(self, word, d=None):
-		#print word
 		if d is None:
 			d = self.data
 		if len(word) > 0:
@@ -40,7 +50,6 @@ class LetterTree(object):
 			return '$' in d
 
 	def is_prefix(self, word, d=None):
-		#print "checking " + word
 		if d is None:
 			d = self.data
 		if len(word) > 0:
@@ -83,7 +92,6 @@ if __name__ == '__main__':
 		print word + " is a word? " + str(tree.is_word(word))
 		print word + " is a prefix? " + str(tree.is_prefix(word))
 		print word + " is terminal? " + str(tree.is_terminal(word))
-#	tree.dump()
 
 	for word in ['pan', 'shirt', 'intense', 'ax']:
 		print word + ' suggestions: ' + ', '.join([str(x) for x in tree.alts(word)])

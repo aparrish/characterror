@@ -1,4 +1,5 @@
 *.pyc
 *$py.class
 processing-py.jar
+build
 Characterror.app

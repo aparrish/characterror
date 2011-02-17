@@ -1,4 +1,4 @@
 #!/bin/bash
-rm -rf ./Characterror.app
-cp -r build/osx_template.app ./Characterror.app
-cp -r processing-py.jar game.py gamestate.py lettertree.py libraries tweener.py wordlist_short data ./Characterror.app/Contents/Resources/Java
+rm -rf build/Characterror.app
+cp -r build_templates/osx_template.app build/Characterror.app
+cp -r processing-py.jar game.py gamestate.py lettertree.py libraries tweener.py wordlist_short data build/Characterror.app/Contents/Resources/Java
