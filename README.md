@@ -2,7 +2,7 @@ Characterror
 ============
 
 A game by Adam Parrish
-http://decontextualize.com/projects/characterror
+http://characterror.com
 
 Running the game
 ----------------

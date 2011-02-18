@@ -422,7 +422,7 @@ class DisplayScoreState(GameState):
 			from java.awt.datatransfer import StringSelection
 			from java.awt import Toolkit
 			clipboard = Toolkit.getDefaultToolkit().getSystemClipboard()
-			clipboard.setContents(StringSelection("I just scored %d points %s on Characterror! http://shorturl/something?%s" % (self.score, modestr, shorthash)), None)
+			clipboard.setContents(StringSelection("I just scored %d points %s on Characterror! http://characterror.com/?%s" % (self.score, modestr, shorthash)), None)
 
 class StringSprite(object):
 	def __init__(self, content, x, y, textsize=16, r=255, g=255, b=255, a=255):
